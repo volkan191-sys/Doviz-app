@@ -1,0 +1,498 @@
+```html
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Döviz Çevirici</title>
+    
+    <meta name="theme-color" content="#f6d365">
+    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=DC&background=f97316&color=fff&size=192">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="data:application/manifest+json;base64,ewogICJuYW1lIjogIkTDtnZpeiDDh2V2aXJpY2kiLAogICJzaG9ydF9uYW1lIjogIkTDtnZpeiBBeWFyIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmNmQzNjUiLAogICJ0aGVtZV9jb2xvciIjogIiNmOTczMTYiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJodHRwczovL3VpLWF2YXRhcnMuY29tL2FwaS8/bmFtZT1EQyZiYWNrZ3JvdW5kPWY5NzMxNiZjb2xvcj1mZmYmc2l6ZT0xOTIiLAogICAgICAic2l6ZXMiOiAiMTkyeDE5MiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0sCiAgICB7CiAgICAgICJzcmMiOiAiaHR0cHM6Ly91aS1hdmF0YXJzLmNvbS9hcGkvP25hbWU9REMmYmFja2dyb3VuZD1mOTczMTYmY29sb3I9ZmZmJnNpemU9NTEyIiwKICAgICAgInNpemVzIjogIjUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9wbmciCiAgICB9CiAgXQp9">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom styles for animations and smooth transitions */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            min-height: 100vh;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #fb923c; /* Tailwind orange-400 */
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+
+    <main class="glass-panel rounded-2xl w-full max-w-md p-6 sm:p-8 relative">
+        <h1 class="text-3xl font-bold text-gray-800 text-center mb-6">
+            <i class="fa-solid fa-money-bill-transfer text-orange-500 mr-2"></i>Döviz Çevirici
+        </h1>
+
+        <div class="flex mb-5 bg-white/50 p-1 rounded-xl border border-gray-200 shadow-inner">
+            <button id="tab-try" class="flex-1 py-2 px-4 text-sm font-bold rounded-lg bg-white shadow text-orange-500 transition-all">₺ İşlemleri</button>
+            <button id="tab-arb" class="flex-1 py-2 px-4 text-sm font-semibold rounded-lg text-gray-500 hover:text-gray-800 transition-all">Arbitraj (Parite)</button>
+        </div>
+
+        <div class="space-y-5">
+            <!-- Amount Input -->
+            <div>
+                <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Miktar</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="text-gray-500 sm:text-sm"><i class="fa-solid fa-coins"></i></span>
+                    </div>
+                    <input type="number" id="amount" value="1" min="0" step="any"
+                        class="block w-full pl-10 pr-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition-colors text-lg font-semibold text-gray-800"
+                        placeholder="Miktar giriniz">
+                </div>
+            </div>
+
+            <!-- TRY Mode Inputs -->
+            <div id="try-inputs" class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                
+                <!-- Operation Type -->
+                <div class="w-full sm:w-[30%]">
+                    <label for="operation-type" class="block text-sm font-medium text-gray-700 mb-1">İşlem Türü</label>
+                    <select id="operation-type" class="block w-full py-3 px-4 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 text-gray-800 font-medium cursor-pointer shadow-sm appearance-none">
+                        <option value="boz">Döviz Boz (Sat)</option>
+                        <option value="al">Döviz Al (Al)</option>
+                    </select>
+                </div>
+
+                <!-- Currency -->
+                <div class="w-full sm:w-[65%]">
+                    <label for="currency" class="block text-sm font-medium text-gray-700 mb-1">Döviz Cinsi</label>
+                    <select id="currency" class="block w-full py-3 px-4 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 text-gray-800 font-medium cursor-pointer shadow-sm appearance-none">
+                        <!-- Options will be populated by JS -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- ARB Mode Inputs -->
+            <div id="arb-inputs" class="hidden flex flex-col items-center justify-center gap-1 sm:gap-2">
+                <!-- From Currency -->
+                <div class="w-full">
+                    <label for="from-currency" class="block text-sm font-medium text-gray-700 mb-1">Verilen Döviz</label>
+                    <select id="from-currency" class="block w-full py-3 px-4 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 text-gray-800 font-medium cursor-pointer shadow-sm appearance-none">
+                        <!-- Options will be populated by JS -->
+                    </select>
+                </div>
+                
+                <!-- Swap Button -->
+                <div class="flex justify-center -my-2 sm:my-0 relative z-10">
+                    <button id="swap-btn" type="button" class="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-full shadow-md transition-colors focus:outline-none focus:ring-2 focus:ring-orange-400 flex items-center justify-center border-4 border-white sm:border-transparent w-10 h-10">
+                        <i class="fa-solid fa-arrow-down-up-across-line text-sm sm:hidden"></i>
+                        <i class="fa-solid fa-arrow-right-arrow-left hidden sm:block"></i>
+                    </button>
+                </div>
+
+                <!-- To Currency -->
+                <div class="w-full">
+                    <label for="to-currency" class="block text-sm font-medium text-gray-700 mb-1">Alınan Döviz</label>
+                    <select id="to-currency" class="block w-full py-3 px-4 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 text-gray-800 font-medium cursor-pointer shadow-sm appearance-none">
+                        <!-- Options will be populated by JS -->
+                    </select>
+                </div>
+            </div>
+            
+            <p class="text-xs text-gray-500 text-center italic mt-4">
+            </p>
+
+            <!-- Convert Button -->
+            <button id="convert-btn" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition duration-200 flex justify-center items-center gap-2">
+                <span>Hesapla</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading" class="hidden justify-center items-center py-8">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Result Section -->
+        <div id="result-container" class="hidden mt-6 bg-orange-50 rounded-xl p-5 border border-orange-200 text-center fade-in">
+            <p class="text-gray-500 text-sm font-medium mb-1" id="exchange-rate-info">
+                <!-- e.g., 1 USD = 34.50 TRY -->
+            </p>
+            <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 overflow-hidden text-ellipsis" id="final-result">
+                <!-- e.g., 34.50 TRY -->
+            </h2>
+            <p class="text-sm text-gray-600 font-medium mt-2" id="profit-info">
+                <!-- Profit details -->
+            </p>
+            <p class="text-xs text-gray-400 mt-3" id="last-updated">
+                <!-- Last updated info -->
+            </p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error-message" class="hidden mt-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation text-red-500"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-red-700 font-medium" id="error-text">
+                        Bir hata oluştu.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            let currentMode = 'try'; // 'try' or 'arb'
+            const tabTry = document.getElementById('tab-try');
+            const tabArb = document.getElementById('tab-arb');
+            const tryInputs = document.getElementById('try-inputs');
+            const arbInputs = document.getElementById('arb-inputs');
+
+            const amountInput = document.getElementById('amount');
+            const currencySelect = document.getElementById('currency');
+            const operationSelect = document.getElementById('operation-type');
+            
+            const fromCurrencySelect = document.getElementById('from-currency');
+            const toCurrencySelect = document.getElementById('to-currency');
+            const convertBtn = document.getElementById('convert-btn');
+            const swapBtn = document.getElementById('swap-btn');
+            
+            const loadingIndicator = document.getElementById('loading');
+            const resultContainer = document.getElementById('result-container');
+            const exchangeRateInfo = document.getElementById('exchange-rate-info');
+            const finalResult = document.getElementById('final-result');
+            const profitInfo = document.getElementById('profit-info');
+            const lastUpdatedInfo = document.getElementById('last-updated');
+            
+            const errorContainer = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+
+            const API_URL = 'https://open.er-api.com/v6/latest/TRY';
+            const currenciesToTrack = ['USD', 'EUR', 'GBP', 'CHF', 'JPY', 'CAD'];
+            let latestRates = {};
+
+            tabTry.addEventListener('click', () => {
+                currentMode = 'try';
+                tabTry.classList.add('bg-white', 'shadow', 'text-orange-500', 'font-bold');
+                tabTry.classList.remove('text-gray-500', 'font-semibold');
+                
+                tabArb.classList.remove('bg-white', 'shadow', 'text-orange-500', 'font-bold');
+                tabArb.classList.add('text-gray-500', 'font-semibold');
+                
+                tryInputs.classList.remove('hidden');
+                tryInputs.classList.add('flex');
+                arbInputs.classList.add('hidden');
+                arbInputs.classList.remove('flex');
+                
+                hideResult();
+            });
+
+            tabArb.addEventListener('click', () => {
+                currentMode = 'arb';
+                tabArb.classList.add('bg-white', 'shadow', 'text-orange-500', 'font-bold');
+                tabArb.classList.remove('text-gray-500', 'font-semibold');
+                
+                tabTry.classList.remove('bg-white', 'shadow', 'text-orange-500', 'font-bold');
+                tabTry.classList.add('text-gray-500', 'font-semibold');
+                
+                arbInputs.classList.remove('hidden');
+                arbInputs.classList.add('flex');
+                tryInputs.classList.add('hidden');
+                tryInputs.classList.remove('flex');
+                
+                hideResult();
+            });
+
+            async function fetchRates() {
+                showLoading();
+                hideError();
+                try {
+                    const response = await fetch(API_URL);
+                    if (!response.ok) throw new Error('Döviz kurları alınamadı.');
+                    
+                    const data = await response.json();
+                    
+                    if (data.result === "success" && data.rates) {
+                        currenciesToTrack.forEach(curr => {
+                            if (data.rates[curr]) {
+                                const rateToTry = 1 / data.rates[curr];
+                                latestRates[curr] = {
+                                    rate: rateToTry,
+                                    name: getCurrencyName(curr),
+                                    date: data.time_last_update_utc 
+                                };
+                            }
+                        });
+                        populateDropdown();
+                    } else {
+                        throw new Error('API yanıtı geçersiz.');
+                    }
+                    hideLoading();
+                } catch (error) {
+                    hideLoading();
+                    showError(`Bağlantı hatası: Kurlar yüklenemedi. (${error.message})`);
+                }
+            }
+            
+            function getCurrencyName(code) {
+                const names = {
+                    'USD': 'Amerikan Doları',
+                    'EUR': 'Euro',
+                    'GBP': 'İngiliz Sterlini',
+                    'CHF': 'İsviçre Frangı',
+                    'JPY': 'Japon Yeni',
+                    'CAD': 'Kanada Doları'
+                };
+                return names[code] || code;
+            }
+
+            function populateDropdown() {
+                let optionsHtml = '';
+                for (const [code, data] of Object.entries(latestRates)) {
+                    optionsHtml += `<option value="${code}">${code} - ${data.name}</option>`;
+                }
+
+                currencySelect.innerHTML = optionsHtml;
+                
+                // Arbitraj için SADECE EUR ve USD
+                let arbOptionsHtml = '';
+                if (latestRates['EUR']) arbOptionsHtml += `<option value="EUR">EUR - ${latestRates['EUR'].name}</option>`;
+                if (latestRates['USD']) arbOptionsHtml += `<option value="USD">USD - ${latestRates['USD'].name}</option>`;
+                
+                fromCurrencySelect.innerHTML = arbOptionsHtml;
+                toCurrencySelect.innerHTML = arbOptionsHtml;
+                
+                // Select different defaults for Arbitraj
+                if(latestRates['EUR'] && latestRates['USD']) {
+                    fromCurrencySelect.value = 'EUR';
+                    toCurrencySelect.value = 'USD';
+                }
+            }
+
+            function calculateConversion() {
+                const amount = parseFloat(amountInput.value);
+                const margin = 0.008; // 8 per thousand (binde 8)
+
+                if (isNaN(amount) || amount <= 0) {
+                    showError('Lütfen geçerli bir miktar girin (0\'dan büyük).');
+                    return;
+                }
+                
+                hideResult();
+                hideError();
+
+                if (currentMode === 'try') {
+                    // --- TRY Logic ---
+                    const currency = currencySelect.value;
+                    const operation = operationSelect.value;
+                    
+                    if (!latestRates[currency]) { showError('Veri bulunamadı.'); return; }
+
+                    const baseRate = latestRates[currency].rate;
+                    let appliedRate = 0;
+                    let profitPerUnit = 0;
+                    let actionText = '';
+                    
+                    if (operation === 'boz') {
+                        // We buy from customer at lower rate
+                        appliedRate = baseRate * (1 - margin);
+                        profitPerUnit = baseRate - appliedRate;
+                        actionText = 'Müşteriye Ödenecek (₺)';
+                    } else {
+                        // We sell to customer at higher rate
+                        appliedRate = baseRate * (1 + margin);
+                        profitPerUnit = appliedRate - baseRate;
+                        actionText = 'Müşteriden Alınacak (₺)';
+                    }
+
+                    const totalAmount = amount * appliedRate;
+                    const totalProfitTry = amount * profitPerUnit;
+                    
+                    displayResult({
+                        total: totalAmount,
+                        appliedRate: appliedRate,
+                        baseRate: baseRate,
+                        currencyFrom: currency,
+                        currencyTo: '₺',
+                        profitTry: totalProfitTry,
+                        actionText: actionText,
+                        date: latestRates[currency].date
+                    });
+
+                } else {
+                    // --- Arbitraj Logic ---
+                    const fromCurr = fromCurrencySelect.value;
+                    const toCurr = toCurrencySelect.value;
+                    
+                    if (fromCurr === toCurr) {
+                        showError('Arbitraj için farklı iki döviz seçmelisiniz.');
+                        return;
+                    }
+                    if (!latestRates[fromCurr] || !latestRates[toCurr]) { showError('Veri bulunamadı.'); return; }
+
+                    const rateFromTRY = latestRates[fromCurr].rate;
+                    const rateToTRY = latestRates[toCurr].rate;
+                    
+                    // Cross rate: 1 unit of fromCurr = X units of toCurr
+                    const baseCrossRate = rateFromTRY / rateToTRY;
+                    
+                    // We take our 0.8% margin by offering a lower cross rate to the customer
+                    // (They give us fromCurr, we give them LESS toCurr than market)
+                    const appliedCrossRate = baseCrossRate * (1 - margin);
+                    
+                    const trueAmountTo = amount * baseCrossRate;
+                    const appliedAmountTo = amount * appliedCrossRate;
+                    
+                    // Profit in 'toCurr'
+                    const profitToCurr = trueAmountTo - appliedAmountTo;
+                    // Convert profit to TRY for standardized display
+                    const profitTry = profitToCurr * rateToTRY;
+                    
+                    displayResult({
+                        total: appliedAmountTo,
+                        appliedRate: appliedCrossRate,
+                        baseRate: baseCrossRate,
+                        currencyFrom: fromCurr,
+                        currencyTo: toCurr,
+                        profitTry: profitTry,
+                        actionText: 'Müşteriye Verilecek (' + toCurr + ')',
+                        date: latestRates[fromCurr].date
+                    });
+                }
+            }
+
+            function displayResult(data) {
+                const formatter = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 4, minimumFractionDigits: 4 });
+                const currencyFormatter = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+                
+                let toSymbol = data.currencyTo === '₺' ? '₺' : data.currencyTo;
+
+                exchangeRateInfo.innerHTML = `
+                    Piyasa Kuru: 1 ${data.currencyFrom} = ${formatter.format(data.baseRate)} ${toSymbol}<br>
+                    <span class="font-bold text-orange-600">Uygulanan Kur: 1 ${data.currencyFrom} = ${formatter.format(data.appliedRate)} ${toSymbol}</span>
+                `;
+                
+                finalResult.innerHTML = `
+                    <div class="text-sm text-gray-500 mb-1">${data.actionText}</div>
+                    <span class="text-orange-500">${currencyFormatter.format(data.total)}</span> <span class="text-2xl text-gray-600">${toSymbol}</span>
+                `;
+                
+                profitInfo.innerHTML = `
+                    <div class="bg-green-100 text-green-800 p-2 rounded-lg inline-block mt-2">
+                        <i class="fa-solid fa-piggy-bank mr-1"></i> Tahmini Kâr: <span class="font-bold">${currencyFormatter.format(data.profitTry)} ₺</span>
+                    </div>
+                `;
+                
+                const dateObj = new Date(data.date);
+                const formattedDate = dateObj.toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+                lastUpdatedInfo.textContent = `Güncelleme: ${formattedDate} UTC`;
+                
+                resultContainer.classList.remove('hidden');
+                void resultContainer.offsetWidth; 
+                resultContainer.classList.add('fade-in');
+            }
+
+            // UI Helpers
+            function showLoading() {
+                loadingIndicator.classList.remove('hidden');
+                loadingIndicator.classList.add('flex');
+                convertBtn.disabled = true;
+                convertBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            }
+
+            function hideLoading() {
+                loadingIndicator.classList.add('hidden');
+                loadingIndicator.classList.remove('flex');
+                convertBtn.disabled = false;
+                convertBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
+
+            function hideResult() {
+                resultContainer.classList.add('hidden');
+                resultContainer.classList.remove('fade-in');
+            }
+
+            function showError(msg) {
+                errorText.textContent = msg;
+                errorContainer.classList.remove('hidden');
+                hideResult();
+            }
+
+            function hideError() {
+                errorContainer.classList.add('hidden');
+            }
+
+            // Event Listeners
+            convertBtn.addEventListener('click', calculateConversion);
+            amountInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') calculateConversion();
+            });
+
+            if ('serviceWorker' in navigator) {
+                // A very simple inline service worker just to pass the PWA install criteria
+                const swCode = `
+                    self.addEventListener('install', (e) => {
+                        self.skipWaiting();
+                    });
+                    self.addEventListener('fetch', (e) => {
+                        // Do nothing, just pass through. This is minimum requirement for PWA.
+                    });
+                `;
+                const blob = new Blob([swCode], {type: 'application/javascript'});
+                const swUrl = URL.createObjectURL(blob);
+                
+                navigator.serviceWorker.register(swUrl).then(registration => {
+                    console.log('ServiceWorker registration successful');
+                }).catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            }
+
+            // Swap Butonu Click Olayı
+            swapBtn.addEventListener('click', () => {
+                const temp = fromCurrencySelect.value;
+                fromCurrencySelect.value = toCurrencySelect.value;
+                toCurrencySelect.value = temp;
+                
+                // Eğer ekranda daha önce hesaplanmış bir sonuç varsa, çevrimi otomatik yenile
+                if (!resultContainer.classList.contains('hidden')) {
+                    calculateConversion();
+                }
+            });
+
+            // Initialize app
+            fetchRates();
+        });
+    </script>
+</body>
+</html>
+```
